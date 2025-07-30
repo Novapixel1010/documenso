@@ -3,30 +3,31 @@ import { createElement } from 'react';
 import { msg } from '@lingui/core/macro';
 
 import { mailer } from '@documenso/email/mailer';
-import { ConfirmEmailTemplate } from '@documenso/email/templates/confirm-email';
+import { OrganisationAccountLinkTemplate } from '@documenso/email/templates/organisation-account-link';
 import { prisma } from '@documenso/prisma';
 
 import { getI18nInstance } from '../../client-only/providers/i18n-server';
 import { NEXT_PUBLIC_WEBAPP_URL } from '../../constants/app';
-import {
-  DOCUMENSO_INTERNAL_EMAIL,
-  USER_SIGNUP_VERIFICATION_TOKEN_IDENTIFIER,
-} from '../../constants/email';
+import { DOCUMENSO_INTERNAL_EMAIL } from '../../constants/email';
+import { ORGANISATION_ACCOUNT_LINK_VERIFICATION_TOKEN_IDENTIFIER } from '../../constants/organisations';
+import { AppError, AppErrorCode } from '../../errors/app-error';
 import { renderEmailWithI18N } from '../../utils/render-email-with-i18n';
 
-export interface SendConfirmationEmailProps {
+export interface SendOrganisationAccountLinkEmailProps {
   userId: number;
 }
 
-export const sendConfirmationEmail = async ({ userId }: SendConfirmationEmailProps) => {
-  const user = await prisma.user.findFirstOrThrow({
+export const sendOrganisationAccountLinkEmail = async ({
+  userId,
+}: SendOrganisationAccountLinkEmailProps) => {
+  const user = await prisma.user.findFirst({
     where: {
       id: userId,
     },
     include: {
       verificationTokens: {
         where: {
-          identifier: USER_SIGNUP_VERIFICATION_TOKEN_IDENTIFIER,
+          identifier: ORGANISATION_ACCOUNT_LINK_VERIFICATION_TOKEN_IDENTIFIER,
         },
         orderBy: {
           createdAt: 'desc',
@@ -36,16 +37,21 @@ export const sendConfirmationEmail = async ({ userId }: SendConfirmationEmailPro
     },
   });
 
+  if (!user) {
+    throw new AppError(AppErrorCode.NOT_FOUND);
+  }
+
   const [verificationToken] = user.verificationTokens;
 
   if (!verificationToken?.token) {
     throw new Error('Verification token not found for the user');
   }
 
-  const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:3000';
-  const confirmationLink = `${assetBaseUrl}/verify-email/${verificationToken.token}`;
+  const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL();
 
-  const confirmationTemplate = createElement(ConfirmEmailTemplate, {
+  const confirmationLink = `${assetBaseUrl}/link-organisation-account/${verificationToken.token}`;
+
+  const confirmationTemplate = createElement(OrganisationAccountLinkTemplate, {
     assetBaseUrl,
     confirmationLink,
   });
@@ -63,7 +69,7 @@ export const sendConfirmationEmail = async ({ userId }: SendConfirmationEmailPro
       name: user.name || '',
     },
     from: DOCUMENSO_INTERNAL_EMAIL,
-    subject: i18n._(msg`Please confirm your email`),
+    subject: i18n._(msg`A request has been made to link your Documenso account`),
     html,
     text,
   });

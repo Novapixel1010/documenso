@@ -126,3 +126,5 @@ export const PROTECTED_ORGANISATION_URLS = [
 export const isOrganisationUrlProtected = (url: string) => {
   return PROTECTED_ORGANISATION_URLS.some((protectedUrl) => url.startsWith(`/${protectedUrl}`));
 };
+
+export const ORGANISATION_ACCOUNT_LINK_VERIFICATION_TOKEN_IDENTIFIER = 'organisation-account-link';

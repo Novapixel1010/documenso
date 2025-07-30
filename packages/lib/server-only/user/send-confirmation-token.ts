@@ -3,11 +3,10 @@ import { DateTime } from 'luxon';
 
 import { prisma } from '@documenso/prisma';
 
+import { USER_SIGNUP_VERIFICATION_TOKEN_IDENTIFIER } from '../../constants/email';
 import { ONE_HOUR } from '../../constants/time';
 import { sendConfirmationEmail } from '../auth/send-confirmation-email';
 import { getMostRecentVerificationTokenByUserId } from './get-most-recent-verification-token-by-user-id';
-
-const IDENTIFIER = 'confirmation-email';
 
 type SendConfirmationTokenOptions = { email: string; force?: boolean };
 
@@ -39,12 +38,13 @@ export const sendConfirmationToken = async ({
     mostRecentToken?.createdAt &&
     DateTime.fromJSDate(mostRecentToken.createdAt).diffNow('minutes').minutes > -5
   ) {
+    // Todo: Ask about this.
     // return;
   }
 
   const createdToken = await prisma.verificationToken.create({
     data: {
-      identifier: IDENTIFIER,
+      identifier: USER_SIGNUP_VERIFICATION_TOKEN_IDENTIFIER,
       token: token,
       expires: new Date(Date.now() + ONE_HOUR),
       user: {

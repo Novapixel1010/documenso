@@ -37,6 +37,8 @@ export const deleteOrganisationRoute = authenticatedProcedure
       });
     }
 
+    // Todo: Delete all accounts associated with the organisation.
+
     await prisma.organisation.delete({
       where: {
         id: organisation.id,

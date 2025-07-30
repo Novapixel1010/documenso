@@ -1,4 +1,4 @@
-import type { z } from 'zod';
+import { z } from 'zod';
 
 import OrganisationClaimSchema from '@documenso/prisma/generated/zod/modelSchema/OrganisationClaimSchema';
 import { OrganisationSchema } from '@documenso/prisma/generated/zod/modelSchema/OrganisationSchema';
@@ -43,3 +43,21 @@ export const ZOrganisationLiteSchema = OrganisationSchema.pick({
  * A version of the organisation response schema when returning multiple organisations at once from a single API endpoint.
  */
 export const ZOrganisationManySchema = ZOrganisationLiteSchema;
+
+export const ZOrganisationAccountLinkMetadataSchema = z.object({
+  type: z.enum(['link', 'create']),
+  userId: z.number(),
+  organisationId: z.string(),
+  oauthConfig: z.object({
+    // type: z.string(), // : 'oauth', // organisation-sso
+    // provider: z.string(), // : clientOptions.id, // org-oidc-${organisation.id}
+    providerAccountId: z.string(), // : sub,
+    accessToken: z.string(), // accessToken,
+    expiresAt: z.number(), // Math.floor(accessTokenExpiresAt.getTime() / 1000),
+    idToken: z.string(), // idToken,
+  }),
+});
+
+export type TOrganisationAccountLinkMetadata = z.infer<
+  typeof ZOrganisationAccountLinkMetadataSchema
+>;
